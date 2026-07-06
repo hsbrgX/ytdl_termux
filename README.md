@@ -27,7 +27,7 @@ pip install yt-dlp
 ## Menjalankan
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/hsbrgX/ytdl_termux
 cd ytdl-termux
 python main.py
 ```
