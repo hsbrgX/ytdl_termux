@@ -52,7 +52,7 @@ def render_video_row(i, entry):
     duration = entry.get("duration")
     duration_str = f"{int(duration // 60)}:{int(duration % 60):02d}" if duration else "?"
     title = entry.get("title", "Tanpa judul")
-    return f"{title}  [{duration_str}]"
+    return f"{i + 1}. {title}  [{duration_str}]"
 
 
 def pick_video(entries):
