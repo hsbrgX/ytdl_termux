@@ -1,8 +1,8 @@
-"""Elemen antarmuka terminal: pesan status, banner, progress bar, dan pager."""
+"""Elemen antarmuka terminal: pesan status, banner, progress bar, pager, dan menu panah."""
 
 import os
 import sys
-import time
+import curses
 import shutil
 
 from config import RESET, BOLD, CYAN, GREEN, YELLOW, BLUE, MAGENTA, RED, GRAY, BAR_WIDTH
@@ -92,3 +92,63 @@ def paged_list(items, render_row, page_size=None):
         else:
             warn("Input tidak dikenali.")
             input("Tekan Enter untuk lanjut...")
+
+
+_UP_KEYS = (curses.KEY_UP, ord("w"), ord("W"), ord("k"))
+_DOWN_KEYS = (curses.KEY_DOWN, ord("s"), ord("S"), ord("j"))
+_LEFT_KEYS = (curses.KEY_LEFT, ord("a"), ord("A"), ord("h"))
+_RIGHT_KEYS = (curses.KEY_RIGHT, ord("d"), ord("D"), ord("l"))
+_CONFIRM_KEYS = (curses.KEY_ENTER, 10, 13)
+_CANCEL_KEYS = (ord("q"), ord("Q"), 27)
+
+
+def arrow_select(options, header_lines=None, footer="↑/w ↓/s  PgUp/PgDn  Enter pilih  q batal"):
+    """
+    Menu pilihan dengan navigasi panah/WASD (Termux-friendly).
+    options: list[str] baris polos (tanpa kode warna ANSI).
+    Return index terpilih, atau None jika dibatalkan.
+    """
+    header_lines = header_lines or []
+
+    def _run(stdscr):
+        curses.curs_set(0)
+        stdscr.keypad(True)
+        idx, top = 0, 0
+
+        while True:
+            height, width = stdscr.getmaxyx()
+            header_h = len(header_lines)
+            visible = max(height - header_h - 2, 1)
+
+            if idx < top:
+                top = idx
+            elif idx >= top + visible:
+                top = idx - visible + 1
+
+            stdscr.clear()
+            for row, line in enumerate(header_lines):
+                stdscr.addstr(row, 0, line[: width - 1])
+
+            for row, i in enumerate(range(top, min(top + visible, len(options)))):
+                marker = "> " if i == idx else "  "
+                attr = curses.A_REVERSE if i == idx else curses.A_NORMAL
+                stdscr.addstr(header_h + row, 0, f"{marker}{options[i]}"[: width - 1], attr)
+
+            stdscr.addstr(height - 1, 0, footer[: width - 1])
+            stdscr.refresh()
+
+            key = stdscr.getch()
+            if key in _UP_KEYS:
+                idx = (idx - 1) % len(options)
+            elif key in _DOWN_KEYS:
+                idx = (idx + 1) % len(options)
+            elif key == curses.KEY_NPAGE:
+                idx = min(idx + visible, len(options) - 1)
+            elif key == curses.KEY_PPAGE:
+                idx = max(idx - visible, 0)
+            elif key in _CONFIRM_KEYS or key in _RIGHT_KEYS:
+                return idx
+            elif key in _CANCEL_KEYS or key in _LEFT_KEYS:
+                return None
+
+    return curses.wrapper(_run)
