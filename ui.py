@@ -61,39 +61,25 @@ def render_progress_bar(percent, extra=""):
     sys.stdout.flush()
 
 
-def paged_list(items, render_row, page_size=None):
-    """
-    Tampilkan `items` per halaman dengan navigasi ala pager (n/p/q).
-    render_row(index, item) -> baris teks untuk ditampilkan.
-    Return index terpilih (0-based), atau None jika dibatalkan.
-    """
-    if page_size is None:
-        rows = shutil.get_terminal_size((80, 24)).lines
-        page_size = max(5, rows - 6)
+def build_home_header(version_info, user_name, first_login, download_dir):
+    width = 46
+    top = "╔" + "═" * (width - 2) + "╗"
+    bot = "╚" + "═" * (width - 2) + "╝"
+    sep = "╟" + "─" * (width - 2) + "╢"
 
-    total_pages = (len(items) + page_size - 1) // page_size
-    page = 0
+    def row(text):
+        return "║ " + text[: width - 4].ljust(width - 4) + " ║"
 
-    while True:
-        start, end = page * page_size, min(page * page_size + page_size, len(items))
-        clear_screen()
-        banner(f"Halaman {page + 1}/{total_pages}")
-        for i in range(start, end):
-            print(render_row(i, items[i]))
-        print(f"\n{GRAY}[n] next  [p] prev  [q] batal  atau ketik nomor{RESET}")
-
-        cmd = prompt("").lower()
-        if cmd == "n":
-            page = min(page + 1, total_pages - 1)
-        elif cmd == "p":
-            page = max(page - 1, 0)
-        elif cmd == "q":
-            return None
-        elif cmd.isdigit() and 1 <= int(cmd) <= len(items):
-            return int(cmd) - 1
-        else:
-            warn("Input tidak dikenali.")
-            input("Tekan Enter untuk lanjut...")
+    logo_rows = [row(line) for line in ASCII_LOGO.strip("\n").split("\n")]
+    lines = [top, *logo_rows, sep]
+    lines.append(row(f"v{version_info['version']}  ·  {version_info['owner']}/{version_info['repo']}"))
+    lines.append(sep)
+    lines.append(row(f"Halo, {user_name}"))
+    lines.append(row(f"First login: {first_login}"))
+    lines.append(row(f"Dir: {download_dir}"))
+    lines.append(bot)
+    lines.append("")
+    return lines
 
 
 _UP_KEYS = (curses.KEY_UP, ord("w"), ord("W"), ord("k"))
@@ -104,7 +90,7 @@ _CONFIRM_KEYS = (curses.KEY_ENTER, 10, 13)
 _CANCEL_KEYS = (ord("q"), ord("Q"), 27)
 
 
-def arrow_select(options, header_lines=None, footer="↑/w ↓/s  PgUp/PgDn  Enter pilih  q batal"):
+def arrow_select(options, header_lines=None, footer="↑/w ↓/s  n/p halaman  Enter pilih  q batal"):
     """
     Menu pilihan dengan navigasi panah/WASD (Termux-friendly).
     options: list[str] baris polos (tanpa kode warna ANSI).
@@ -153,9 +139,9 @@ def arrow_select(options, header_lines=None, footer="↑/w ↓/s  PgUp/PgDn  Ent
                 idx = (idx - 1) % len(options)
             elif key in _DOWN_KEYS:
                 idx = (idx + 1) % len(options)
-            elif key == curses.KEY_NPAGE:
+            elif key == curses.KEY_NPAGE or key in (ord("n"), ord("N")):
                 idx = min(idx + visible, len(options) - 1)
-            elif key == curses.KEY_PPAGE:
+            elif key == curses.KEY_PPAGE or key in (ord("p"), ord("P")):
                 idx = max(idx - visible, 0)
             elif key in _CONFIRM_KEYS or key in _RIGHT_KEYS:
                 return idx
