@@ -12,10 +12,11 @@ Downloader YouTube interaktif berbasis `yt-dlp`, dirancang untuk berjalan di Ter
 - Pilih kualitas video (144p–1080p60) atau ekstrak audio ke MP3
 - Auto-install dependency (`yt-dlp`, `ffmpeg`) jika belum terpasang
 - Auto-deteksi folder `Download`, atau set folder manual lewat Settings
-- Settings: folder download, kualitas default, kode negara search
-- Force update via git (fetch + hard reset / clone ulang)
+- Settings: folder download, kualitas default (list pilih), kode negara search
+- Force update via git, cek version.json dulu sebelum sync paksa
+- Navigasi menu pakai panah/WASD (Termux-friendly)
+- Info repo (owner/nama/versi) tampil di layar utama
 - Progress bar real-time berbasis byte terunduh
-- Navigasi list hasil pencarian dengan pager (`n`/`p`/`q`)
 - Riwayat download tersimpan di `history.log`
 - Prompt lanjut/keluar setelah setiap download selesai
 
@@ -30,7 +31,7 @@ pip install yt-dlp
 ## Menjalankan
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/hsbrgX/ytdl_termux
 cd ytdl-termux
 python main.py
 ```
