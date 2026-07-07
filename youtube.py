@@ -4,7 +4,7 @@ import os
 import time
 import yt_dlp
 
-from config import SEARCH_MAX_RESULTS, CHANNEL_MAX_RESULTS
+from config import SEARCH_MAX_RESULTS, CHANNEL_MAX_RESULTS  # noqa: F401 (kompatibilitas)
 from ui import info, warn
 
 
@@ -37,20 +37,14 @@ def _base_search_opts(country=None):
     return opts
 
 
-def search_videos(query, max_results=SEARCH_MAX_RESULTS, country=None):
-    # Prefix ytsearchN: eksplisit lebih reliable daripada opsi default_search
-    # (default_search kadang tidak ter-trigger tergantung versi yt-dlp).
+def search_videos(query, max_results=None, country=None):
     opts = _base_search_opts(country)
-    search_query = f"ytsearch{max(max_results * 2, 20)}:{query}"
     with yt_dlp.YoutubeDL(opts) as ydl:
-        data = ydl.extract_info(search_query, download=False) or {}
-    entries = [e for e in data.get("entries", []) if e]
-    return entries[:max_results]
+        data = ydl.extract_info(f"ytsearchall:{query}", download=False) or {}
+    return [e for e in data.get("entries", []) if e]
 
 
-def list_channel_videos(keyword, max_results=CHANNEL_MAX_RESULTS, country=None):
-    # Trik: cari video dari keyword lalu ambil channel_url pemilik video
-    # teratas, karena yt-dlp tidak punya "cari channel" langsung.
+def list_channel_videos(keyword, max_results=None, country=None):
     opts = _base_search_opts(country)
     with yt_dlp.YoutubeDL(opts) as ydl:
         data = ydl.extract_info(f"ytsearch1:{keyword} channel", download=False) or {}
@@ -60,7 +54,6 @@ def list_channel_videos(keyword, max_results=CHANNEL_MAX_RESULTS, country=None):
         channel_url = entries[0].get("channel_url") or entries[0].get("url")
 
     opts = _base_search_opts(country)
-    opts["playlistend"] = max_results
     with yt_dlp.YoutubeDL(opts) as ydl:
         channel_data = ydl.extract_info(channel_url, download=False) or {}
 
@@ -69,7 +62,7 @@ def list_channel_videos(keyword, max_results=CHANNEL_MAX_RESULTS, country=None):
         if not item:
             continue
         videos.extend(item["entries"] if "entries" in item else [item])
-    return videos[:max_results]
+    return videos
 
 
 def fetch_formats(url):
