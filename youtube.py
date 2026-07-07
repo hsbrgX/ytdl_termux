@@ -1,6 +1,7 @@
 """Interaksi dengan YouTube via yt-dlp: pencarian, channel, dan pemilihan format."""
 
 import os
+import time
 import yt_dlp
 
 from config import CYAN, YELLOW, GRAY, RESET, SEARCH_MAX_RESULTS, CHANNEL_MAX_RESULTS
@@ -13,6 +14,13 @@ def is_youtube_url(text):
 
 def video_url(entry):
     return entry.get("url") or f"https://www.youtube.com/watch?v={entry.get('id')}"
+
+
+def timed(fn, *args, **kwargs):
+    """Jalankan fn, kembalikan (hasil, durasi_detik)."""
+    start = time.perf_counter()
+    result = fn(*args, **kwargs)
+    return result, time.perf_counter() - start
 
 
 def search_videos(query, max_results=SEARCH_MAX_RESULTS):
