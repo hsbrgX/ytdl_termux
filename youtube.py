@@ -4,8 +4,8 @@ import os
 import time
 import yt_dlp
 
-from config import CYAN, YELLOW, GRAY, RESET, SEARCH_MAX_RESULTS, CHANNEL_MAX_RESULTS
-from ui import banner, clear_screen, info, prompt, warn
+from config import SEARCH_MAX_RESULTS, CHANNEL_MAX_RESULTS
+from ui import info, warn
 
 
 def is_youtube_url(text):
@@ -80,11 +80,9 @@ def fetch_formats(url):
     return data.get("formats", []), data.get("title", "video")
 
 
-def pick_format(url):
-    info("Mengambil daftar format...")
+def get_format_options(url):
+    """Return list[(label, format_id)] resolusi unik untuk sebuah video."""
     formats, _ = fetch_formats(url)
-
-    # Satu opsi per resolusi unik (hindari duplikat itag beda bitrate).
     resolutions = {}
     for f in formats:
         if f.get("vcodec") == "none":
@@ -92,21 +90,23 @@ def pick_format(url):
         res = f.get("format_note") or f.get("height")
         if res and res not in resolutions:
             resolutions[res] = f["format_id"]
-    options = list(resolutions.items())
+    return list(resolutions.items())
 
-    clear_screen()
-    banner("Pilih Kualitas")
-    print(f"{YELLOW}  0.{RESET} Audio only (MP3, kualitas terbaik)")
-    for i, (res, fid) in enumerate(options, 1):
-        print(f"{YELLOW}{i:>3}.{RESET} {res}p  {GRAY}(format_id: {fid}){RESET}")
 
-    choice = prompt("Pilih nomor format: ")
-    if choice == "0":
+def pick_format(url):
+    from ui import arrow_select
+
+    info("Mengambil daftar format...")
+    options = get_format_options(url)
+
+    labels = ["Audio only (MP3, kualitas terbaik)"] + [f"{res}p" for res, _ in options]
+    idx = arrow_select(labels, header_lines=["Pilih Kualitas", ""])
+    if idx is None:
+        warn("Dibatalkan, pakai default (best).")
+        return "best"
+    if idx == 0:
         return "audio"
-    if choice.isdigit() and 1 <= int(choice) <= len(options):
-        return options[int(choice) - 1][1]
-    warn("Pilihan tidak valid, pakai default (best).")
-    return "best"
+    return options[idx - 1][1]
 
 
 def resolve_playlist_or_video(url):
