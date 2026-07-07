@@ -5,6 +5,8 @@ Install: pkg install python ffmpeg -y && pip install yt-dlp
 Jalankan: python main.py
 """
 
+import datetime
+
 from system import ensure_dependencies, resolve_download_dir, check_and_update
 
 ensure_dependencies()  # harus sebelum import yt_dlp agar auto-install jalan
@@ -12,7 +14,7 @@ ensure_dependencies()  # harus sebelum import yt_dlp agar auto-install jalan
 from config import YELLOW, RESET, GRAY, APP_DIR, REPO_URL, REPO_BRANCH
 from settings import load_settings, update_setting
 from version import load_version
-from ui import ASCII_LOGO, clear_screen, prompt, arrow_select, err, info, ok, warn, found
+from ui import ASCII_LOGO, clear_screen, prompt, arrow_select, build_home_header, err, info, ok, warn, found
 from youtube import (
     is_youtube_url,
     video_url,
@@ -29,6 +31,11 @@ from downloader import download
 SETTINGS = load_settings()
 VERSION_INFO = load_version()
 DOWNLOAD_DIR = resolve_download_dir(SETTINGS["download_dir"])
+
+if not SETTINGS.get("user_name"):
+    name = prompt("Nama kamu: ") or "User"
+    SETTINGS = update_setting("user_name", name)
+    SETTINGS = update_setting("first_login", datetime.date.today().strftime("%d/%m/%y"))
 
 MAIN_MENU_OPTIONS = [
     "Cari video",
@@ -192,12 +199,7 @@ def handle_update():
 def run_once():
     """Return True jika ada aksi download (agar prompt 'download lagi' muncul)."""
     clear_screen()
-    header = [
-        f"ytdl-termux v{VERSION_INFO['version']}",
-        f"by {VERSION_INFO['owner']}  ·  github.com/{VERSION_INFO['owner']}/{VERSION_INFO['repo']}",
-        f"dir: {DOWNLOAD_DIR}",
-        "",
-    ]
+    header = build_home_header(VERSION_INFO, SETTINGS["user_name"], SETTINGS["first_login"], DOWNLOAD_DIR)
     mode = arrow_select(MAIN_MENU_OPTIONS, header_lines=header)
     if mode is None or mode == 6:
         raise SystemExit(0)
