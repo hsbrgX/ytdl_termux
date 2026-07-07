@@ -8,11 +8,13 @@ import shutil
 from config import RESET, BOLD, CYAN, GREEN, YELLOW, BLUE, MAGENTA, RED, GRAY, BAR_WIDTH
 
 ASCII_LOGO = r"""
- __   _______ ____  _
- \ \ / /_   _|  _ \| |
-  \ V /  | | | | | | |
-   | |   | | | |_| | |___
-   |_|   |_| |____/|_____|  termux-dl
+██╗   ██╗████████╗██████╗ ██╗
+╚██╗ ██╔╝╚══██╔══╝██╔══██╗██║
+ ╚████╔╝    ██║   ██║  ██║██║
+  ╚██╔╝     ██║   ██║  ██║██║
+   ██║      ██║   ██████╔╝███████╗
+   ╚═╝      ╚═╝   ╚═════╝ ╚══════╝
+        T E R M U X   E D I T I O N
 """
 
 
@@ -115,6 +117,15 @@ def arrow_select(options, header_lines=None, footer="↑/w ↓/s  PgUp/PgDn  Ent
         stdscr.keypad(True)
         idx, top = 0, 0
 
+        curses.start_color()
+        curses.use_default_colors()
+        curses.init_pair(1, curses.COLOR_CYAN, -1)
+        curses.init_pair(2, curses.COLOR_YELLOW, -1)
+        curses.init_pair(3, curses.COLOR_GREEN, -1)
+        header_attr = curses.color_pair(1) | curses.A_BOLD
+        select_attr = curses.color_pair(3) | curses.A_REVERSE | curses.A_BOLD
+        footer_attr = curses.color_pair(2)
+
         while True:
             height, width = stdscr.getmaxyx()
             header_h = len(header_lines)
@@ -127,14 +138,14 @@ def arrow_select(options, header_lines=None, footer="↑/w ↓/s  PgUp/PgDn  Ent
 
             stdscr.clear()
             for row, line in enumerate(header_lines):
-                stdscr.addstr(row, 0, line[: width - 1])
+                stdscr.addstr(row, 0, line[: width - 1], header_attr)
 
             for row, i in enumerate(range(top, min(top + visible, len(options)))):
-                marker = "> " if i == idx else "  "
-                attr = curses.A_REVERSE if i == idx else curses.A_NORMAL
+                marker = "▶ " if i == idx else "  "
+                attr = select_attr if i == idx else curses.A_NORMAL
                 stdscr.addstr(header_h + row, 0, f"{marker}{options[i]}"[: width - 1], attr)
 
-            stdscr.addstr(height - 1, 0, footer[: width - 1])
+            stdscr.addstr(height - 1, 0, footer[: width - 1], footer_attr)
             stdscr.refresh()
 
             key = stdscr.getch()
