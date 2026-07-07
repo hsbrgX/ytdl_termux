@@ -224,13 +224,24 @@ def run_once():
 
     if mode == 1:
         keyword = prompt("Keyword channel: ")
-        entries, elapsed = timed(list_channel_videos, keyword, country=country)
+        try:
+            entries, elapsed = timed(list_channel_videos, keyword, country=country)
+        except Exception as e:
+            err(f"Gagal: {e}")
+            return False
     else:
         query = prompt("Cari video (judul/keyword): ")
         if is_youtube_url(query):
             handle_direct_link(query)
             return True
-        entries, elapsed = timed(search_videos, query, country=country) if query else ([], 0)
+        if not query:
+            entries, elapsed = [], 0
+        else:
+            try:
+                entries, elapsed = timed(search_videos, query, country=country)
+            except Exception as e:
+                err(f"Gagal: {e}")
+                return False
 
     if not entries:
         err("Tidak ada hasil.")
