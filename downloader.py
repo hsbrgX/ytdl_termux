@@ -64,12 +64,10 @@ def _progress_hook(d):
         downloaded = d.get("downloaded_bytes", 0)
         percent = (downloaded / total * 100) if total else _parse_percent(d)
         speed = d.get("_speed_str", "").strip()
-        eta = d.get("_eta_str", "").strip()
-        render_progress_bar(percent, f"{speed}  ETA {eta}")
+        render_progress_bar(percent, speed)
     elif d["status"] == "finished":
-        render_progress_bar(100.0, "selesai")
+        render_progress_bar(100, "done")
         print()
-        info("Memproses/merging file...")
 
 
 def _parse_percent(d):
