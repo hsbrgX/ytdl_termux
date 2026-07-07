@@ -23,30 +23,52 @@ def timed(fn, *args, **kwargs):
     return result, time.perf_counter() - start
 
 
-def search_videos(query, max_results=SEARCH_MAX_RESULTS):
-    opts = {"quiet": True, "extract_flat": True, "default_search": f"ytsearch{max_results}"}
+def _base_search_opts(country=None):
+    opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "extract_flat": True,
+        "ignoreerrors": True,
+        "geo_bypass": True,
+        "socket_timeout": 15,
+    }
+    if country:
+        opts["geo_bypass_country"] = country.upper()
+    return opts
+
+
+def search_videos(query, max_results=SEARCH_MAX_RESULTS, country=None):
+    # ytsearchN kadang kosong untuk keyword pendek/ambigu; naikkan jumlah
+    # kandidat yang diminta ke yt-dlp lalu potong hasilnya sendiri supaya
+    # peluang dapat hasil lebih besar.
+    opts = _base_search_opts(country)
+    opts["default_search"] = f"ytsearch{max(max_results * 2, 20)}"
     with yt_dlp.YoutubeDL(opts) as ydl:
-        data = ydl.extract_info(query, download=False)
-    return data.get("entries", [])
+        data = ydl.extract_info(query, download=False) or {}
+    entries = [e for e in data.get("entries", []) if e]
+    return entries[:max_results]
 
 
-def list_channel_videos(keyword, max_results=CHANNEL_MAX_RESULTS):
+def list_channel_videos(keyword, max_results=CHANNEL_MAX_RESULTS, country=None):
     # Trik: cari video dari keyword lalu ambil channel_url pemilik video
     # teratas, karena yt-dlp tidak punya "cari channel" langsung.
-    opts = {"quiet": True, "extract_flat": True}
+    opts = _base_search_opts(country)
     with yt_dlp.YoutubeDL(opts) as ydl:
-        data = ydl.extract_info(f"ytsearch1:{keyword} channel", download=False)
-        entries = data.get("entries", [])
+        data = ydl.extract_info(f"ytsearch1:{keyword} channel", download=False) or {}
+        entries = [e for e in data.get("entries", []) if e]
         if not entries:
             return []
         channel_url = entries[0].get("channel_url") or entries[0].get("url")
 
-    opts = {"quiet": True, "extract_flat": True, "playlistend": max_results}
+    opts = _base_search_opts(country)
+    opts["playlistend"] = max_results
     with yt_dlp.YoutubeDL(opts) as ydl:
-        channel_data = ydl.extract_info(channel_url, download=False)
+        channel_data = ydl.extract_info(channel_url, download=False) or {}
 
     videos = []
-    for item in channel_data.get("entries", []):
+    for item in channel_data.get("entries", []) or []:
+        if not item:
+            continue
         videos.extend(item["entries"] if "entries" in item else [item])
     return videos[:max_results]
 
@@ -92,3 +114,11 @@ def resolve_playlist_or_video(url):
     opts = {"quiet": True, "extract_flat": True}
     with yt_dlp.YoutubeDL(opts) as ydl:
         return ydl.extract_info(url, download=False)
+
+
+def read_links_from_file(path):
+    if not os.path.isfile(path):
+        return []
+    with open(path, "r", encoding="utf-8") as f:
+        lines = [line.strip() for line in f]
+    return [line for line in lines if is_youtube_url(line)]
