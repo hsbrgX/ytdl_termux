@@ -10,10 +10,11 @@ from system import ensure_dependencies, detect_download_dir
 ensure_dependencies()  # harus sebelum import yt_dlp agar auto-install jalan
 
 from config import YELLOW, RESET, GRAY
-from ui import banner, clear_screen, prompt, err, info, ok, warn, paged_list
+from ui import banner, clear_screen, prompt, err, info, ok, warn, found, paged_list
 from youtube import (
     is_youtube_url,
     video_url,
+    timed,
     search_videos,
     list_channel_videos,
     pick_format,
@@ -52,6 +53,14 @@ def download_entire_playlist(entries):
         download(video_url(entry), fmt, entry.get("title", "video"), DOWNLOAD_DIR)
 
 
+def download_batch_links(urls):
+    fmt = pick_format(urls[0])
+    for n, url in enumerate(urls, 1):
+        data = resolve_playlist_or_video(url)
+        info(f"[{n}/{len(urls)}] {data.get('title', url)}")
+        download(url, fmt, data.get("title", "video"), DOWNLOAD_DIR)
+
+
 def handle_direct_link(url):
     info("Membaca link...")
     data = resolve_playlist_or_video(url)
@@ -73,17 +82,32 @@ def handle_direct_link(url):
         download_single(pick_video(entries))
 
 
+def handle_batch_mode():
+    raw = prompt("Paste link (pisah spasi/baris baru): ")
+    urls = [u for u in raw.replace(",", " ").split() if is_youtube_url(u)]
+    if not urls:
+        err("Tidak ada link valid.")
+        return
+    ok(f"{len(urls)} link terdeteksi.")
+    download_batch_links(urls)
+
+
 def show_main_menu():
     clear_screen()
     banner("YT-DLP Termux Downloader")
     print(f"{YELLOW}1.{RESET} Cari video")
     print(f"{YELLOW}2.{RESET} List video dari channel (keyword)")
     print(f"{YELLOW}3.{RESET} Paste link YouTube (video/playlist)")
+    print(f"{YELLOW}4.{RESET} Batch download (banyak link sekaligus)")
     return prompt("Pilih mode: ")
 
 
 def run_once():
     mode = show_main_menu()
+
+    if mode == "4":
+        handle_batch_mode()
+        return
 
     if mode == "3":
         url = prompt("Paste link YouTube: ")
@@ -95,20 +119,19 @@ def run_once():
 
     if mode == "2":
         keyword = prompt("Keyword channel: ")
-        info("Mencari channel...")
-        entries = list_channel_videos(keyword)
+        entries, elapsed = timed(list_channel_videos, keyword)
     else:
         query = prompt("Cari video (judul/keyword): ")
         if is_youtube_url(query):
             handle_direct_link(query)
             return
-        info("Mencari video...")
-        entries = search_videos(query) if query else []
+        entries, elapsed = timed(search_videos, query) if query else ([], 0)
 
     if not entries:
         err("Tidak ada hasil.")
         return
 
+    found(len(entries), elapsed)
     download_single(pick_video(entries))
 
 
