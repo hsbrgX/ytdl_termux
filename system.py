@@ -2,6 +2,7 @@
 
 import os
 import sys
+import json
 import shutil
 import subprocess
 import importlib
@@ -62,6 +63,41 @@ def resolve_download_dir(configured_path):
         os.makedirs(configured_path, exist_ok=True)
         return configured_path
     return detect_download_dir()
+
+
+def _remote_version(app_dir, branch):
+    """Ambil isi version.json dari origin tanpa full checkout. None jika gagal."""
+    result = subprocess.run(
+        ["git", "-C", app_dir, "show", f"origin/{branch}:version.json"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        return None
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
+def check_and_update(repo_url, branch, app_dir, local_version):
+    """
+    Cek version.json remote dulu (kalau repo git sudah ada) sebelum
+    memaksa sync, supaya tidak clone ulang kalau versi sama.
+    Return tuple (updated: bool, message: str).
+    """
+    git_dir = os.path.join(app_dir, ".git")
+
+    if os.path.isdir(git_dir):
+        subprocess.run(["git", "-C", app_dir, "fetch", "--all", "--quiet"], check=True)
+        remote = _remote_version(app_dir, branch)
+        if remote and remote.get("version") == local_version.get("version"):
+            return False, f"Sudah versi terbaru ({local_version.get('version')})."
+        force_update(repo_url, branch, app_dir)
+        new_version = remote.get("version") if remote else "?"
+        return True, f"Update ke versi {new_version} selesai."
+
+    force_update(repo_url, branch, app_dir)
+    return True, "Clone awal selesai."
 
 
 def force_update(repo_url, branch, app_dir):
