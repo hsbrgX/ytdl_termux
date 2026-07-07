@@ -14,7 +14,7 @@ ensure_dependencies()  # harus sebelum import yt_dlp agar auto-install jalan
 from config import YELLOW, RESET, GRAY, APP_DIR, REPO_URL, REPO_BRANCH
 from settings import load_settings, update_setting
 from version import load_version
-from ui import ASCII_LOGO, clear_screen, prompt, arrow_select, build_home_header, err, info, ok, warn, found
+from ui import ASCII_LOGO, clear_screen, prompt, arrow_select, build_home_header, GoHome, err, info, ok, warn, found
 from youtube import (
     is_youtube_url,
     video_url,
@@ -257,7 +257,10 @@ def run_once():
 def main():
     try:
         while True:
-            did_download = run_once()
+            try:
+                did_download = run_once()
+            except GoHome:
+                continue
             if did_download and prompt("Download lagi? (y/n): ").lower() != "y":
                 ok("Selesai.")
                 break
