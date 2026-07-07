@@ -189,17 +189,16 @@ def handle_update():
         err(f"Update gagal: {e}")
 
 
-def print_main_header():
-    clear_screen()
-    print(f"{YELLOW}{ASCII_LOGO}{RESET}")
-    print(f"{GRAY}{VERSION_INFO['owner']}/{VERSION_INFO['repo']}  v{VERSION_INFO['version']}{RESET}")
-    print(f"{GRAY}Download dir: {DOWNLOAD_DIR}{RESET}\n")
-
-
 def run_once():
     """Return True jika ada aksi download (agar prompt 'download lagi' muncul)."""
-    print_main_header()
-    mode = arrow_select(MAIN_MENU_OPTIONS, header_lines=[])
+    clear_screen()
+    header = [
+        f"ytdl-termux v{VERSION_INFO['version']}",
+        f"by {VERSION_INFO['owner']}  ·  github.com/{VERSION_INFO['owner']}/{VERSION_INFO['repo']}",
+        f"dir: {DOWNLOAD_DIR}",
+        "",
+    ]
+    mode = arrow_select(MAIN_MENU_OPTIONS, header_lines=header)
     if mode is None or mode == 6:
         raise SystemExit(0)
 
