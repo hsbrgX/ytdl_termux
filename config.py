@@ -12,8 +12,8 @@ MAGENTA = "\033[35m"
 RED = "\033[31m"
 GRAY = "\033[90m"
 
-SEARCH_MAX_RESULTS = 25
-CHANNEL_MAX_RESULTS = 30
+SEARCH_MAX_RESULTS = 50
+CHANNEL_MAX_RESULTS = 50
 BAR_WIDTH = 24
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -27,4 +27,6 @@ DEFAULT_SETTINGS = {
     "download_dir": None,   # None = auto-detect
     "default_format": None, # None = tanya tiap kali
     "country": "ID",
+    "user_name": None,
+    "first_login": None,
 }
