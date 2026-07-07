@@ -52,3 +52,55 @@ def detect_download_dir():
     fallback = os.path.expanduser("~/storage/downloads/ytdl")
     os.makedirs(fallback, exist_ok=True)
     return fallback
+
+
+def resolve_download_dir(configured_path):
+    """Pakai path dari settings jika valid, kalau tidak fallback ke auto-detect."""
+    if configured_path and os.path.isdir(configured_path):
+        return configured_path
+    if configured_path:
+        os.makedirs(configured_path, exist_ok=True)
+        return configured_path
+    return detect_download_dir()
+
+
+def force_update(repo_url, branch, app_dir):
+    """
+    Paksa sinkron kode dengan git, tanpa bergantung file versi (json).
+    Jika app_dir sudah repo git: fetch + hard reset ke origin/branch.
+    Jika belum: clone ke folder sementara lalu timpa semua file kecuali
+    settings.json dan history.log agar pengaturan user tidak hilang.
+    """
+    git_dir = os.path.join(app_dir, ".git")
+
+    if os.path.isdir(git_dir):
+        subprocess.run(["git", "-C", app_dir, "fetch", "--all"], check=True)
+        subprocess.run(
+            ["git", "-C", app_dir, "reset", "--hard", f"origin/{branch}"],
+            check=True,
+        )
+        return
+
+    tmp_dir = app_dir + "_update_tmp"
+    if os.path.isdir(tmp_dir):
+        shutil.rmtree(tmp_dir)
+    subprocess.run(
+        ["git", "clone", "--branch", branch, "--depth", "1", repo_url, tmp_dir],
+        check=True,
+    )
+
+    keep = {"settings.json", "history.log"}
+    for name in os.listdir(tmp_dir):
+        if name == ".git":
+            continue
+        src = os.path.join(tmp_dir, name)
+        dst = os.path.join(app_dir, name)
+        if os.path.basename(dst) in keep and os.path.exists(dst):
+            continue
+        if os.path.isdir(src):
+            shutil.rmtree(dst, ignore_errors=True)
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy2(src, dst)
+
+    shutil.rmtree(tmp_dir)
