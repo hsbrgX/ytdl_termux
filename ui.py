@@ -82,15 +82,20 @@ def build_home_header(version_info, user_name, first_login, download_dir):
     return lines
 
 
+class GoHome(Exception):
+    """Sinyal lompat langsung ke menu utama dari mana pun (Ctrl+H)."""
+
+
 _UP_KEYS = (curses.KEY_UP, ord("w"), ord("W"), ord("k"))
 _DOWN_KEYS = (curses.KEY_DOWN, ord("s"), ord("S"), ord("j"))
 _LEFT_KEYS = (curses.KEY_LEFT, ord("a"), ord("A"), ord("h"))
 _RIGHT_KEYS = (curses.KEY_RIGHT, ord("d"), ord("D"), ord("l"))
 _CONFIRM_KEYS = (curses.KEY_ENTER, 10, 13)
 _CANCEL_KEYS = (ord("q"), ord("Q"), 27)
+_HOME_KEY = 8  # Ctrl+H
 
 
-def arrow_select(options, header_lines=None, footer="↑/w ↓/s  n/p halaman  Enter pilih  q batal"):
+def arrow_select(options, header_lines=None, footer="↑/w ↓/s  Enter pilih  q batal  ^H home"):
     """
     Menu pilihan dengan navigasi panah/WASD (Termux-friendly).
     options: list[str] baris polos (tanpa kode warna ANSI).
@@ -135,13 +140,15 @@ def arrow_select(options, header_lines=None, footer="↑/w ↓/s  n/p halaman  E
             stdscr.refresh()
 
             key = stdscr.getch()
-            if key in _UP_KEYS:
+            if key == _HOME_KEY:
+                raise GoHome()
+            elif key in _UP_KEYS:
                 idx = (idx - 1) % len(options)
             elif key in _DOWN_KEYS:
                 idx = (idx + 1) % len(options)
-            elif key == curses.KEY_NPAGE or key in (ord("n"), ord("N")):
+            elif key == curses.KEY_NPAGE:
                 idx = min(idx + visible, len(options) - 1)
-            elif key == curses.KEY_PPAGE or key in (ord("p"), ord("P")):
+            elif key == curses.KEY_PPAGE:
                 idx = max(idx - visible, 0)
             elif key in _CONFIRM_KEYS or key in _RIGHT_KEYS:
                 return idx
