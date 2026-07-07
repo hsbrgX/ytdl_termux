@@ -7,7 +7,7 @@ from config import APP_DIR
 
 VERSION_PATH = os.path.join(APP_DIR, "version.json")
 
-DEFAULT_VERSION = {"owner": "HeisenbergX", "repo": "https://github.com/hsbrgX/ytdl_termux", "version": "1.0", "branch": "main"}
+DEFAULT_VERSION = {"owner": "hsbrgX", "repo": "https://github.com/hsbrgX/ytdl_termux", "version": "1.0", "branch": "main"}
 
 
 def load_version():
