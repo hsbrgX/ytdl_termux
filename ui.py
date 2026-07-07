@@ -2,21 +2,30 @@
 
 import os
 import sys
+import time
 import shutil
 
 from config import RESET, BOLD, CYAN, GREEN, YELLOW, BLUE, MAGENTA, RED, GRAY, BAR_WIDTH
+
+ASCII_LOGO = r"""
+ __   _______ ____  _
+ \ \ / /_   _|  _ \| |
+  \ V /  | | | | | | |
+   | |   | | | |_| | |___
+   |_|   |_| |____/|_____|  termux-dl
+"""
 
 
 def clear_screen():
     os.system("clear")
 
 
-def banner(text):
-    width = min(shutil.get_terminal_size((60, 20)).columns, 60)
-    line = "─" * width
-    print(f"{CYAN}{line}{RESET}")
-    print(f"{BOLD}{MAGENTA}{text.center(width)}{RESET}")
-    print(f"{CYAN}{line}{RESET}")
+def banner(text=None):
+    print(f"{CYAN}{ASCII_LOGO}{RESET}")
+    if text:
+        width = min(shutil.get_terminal_size((60, 20)).columns, 60)
+        print(f"{BOLD}{MAGENTA}{text.center(width)}{RESET}")
+        print(f"{CYAN}{'─' * width}{RESET}")
 
 
 def info(msg):
@@ -35,14 +44,18 @@ def err(msg):
     print(f"{RED}✗{RESET} {msg}")
 
 
+def found(count, seconds):
+    print(f"{GREEN}Found {count} in {seconds:.3f}s{RESET}")
+
+
 def prompt(label):
     return input(f"{CYAN}» {label}{RESET}").strip()
 
 
 def render_progress_bar(percent, extra=""):
     filled = int(BAR_WIDTH * percent / 100)
-    bar = "█" * filled + "░" * (BAR_WIDTH - filled)
-    sys.stdout.write(f"\r{GREEN}{bar}{RESET} {percent:5.1f}%  {GRAY}{extra}{RESET}   ")
+    bar = "#" * filled + " " * (BAR_WIDTH - filled)
+    sys.stdout.write(f"\r[{GREEN}{bar}{RESET}] {percent:3.0f}% {GRAY}{extra}{RESET}")
     sys.stdout.flush()
 
 
