@@ -20,7 +20,7 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 SETTINGS_PATH = os.path.join(APP_DIR, "settings.json")
 
 # Ganti sesuai URL repo git kamu.
-REPO_URL = "https://github.com/USERNAME/ytdl-termux.git"
+REPO_URL = "https://github.com/hsbrgX/ytdl-termux.git"
 REPO_BRANCH = "main"
 
 DEFAULT_SETTINGS = {
