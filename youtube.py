@@ -38,13 +38,12 @@ def _base_search_opts(country=None):
 
 
 def search_videos(query, max_results=SEARCH_MAX_RESULTS, country=None):
-    # ytsearchN kadang kosong untuk keyword pendek/ambigu; naikkan jumlah
-    # kandidat yang diminta ke yt-dlp lalu potong hasilnya sendiri supaya
-    # peluang dapat hasil lebih besar.
+    # Prefix ytsearchN: eksplisit lebih reliable daripada opsi default_search
+    # (default_search kadang tidak ter-trigger tergantung versi yt-dlp).
     opts = _base_search_opts(country)
-    opts["default_search"] = f"ytsearch{max(max_results * 2, 20)}"
+    search_query = f"ytsearch{max(max_results * 2, 20)}:{query}"
     with yt_dlp.YoutubeDL(opts) as ydl:
-        data = ydl.extract_info(query, download=False) or {}
+        data = ydl.extract_info(search_query, download=False) or {}
     entries = [e for e in data.get("entries", []) if e]
     return entries[:max_results]
 
